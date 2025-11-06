@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCI Check-in</title>
+</head>
+<body>
+    
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCI Check-in - ระบบเช็กชื่อเข้าเรียน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(211, 47, 47, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(211, 47, 47, 0.3);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .qr-container {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="gradient-bg text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-red-600 rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl">
+                    TCI
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold">TCI Check-in</h1>
+                    <p class="text-red-100 text-sm">สาขาวิชาเทคโนโลยีและนวัตกรรมคอมพิวเตอร์</p>
+                </div>
+            </div>
+            <div id="userInfo" class="hidden">
+                <span id="userName" class="mr-4"></span>
+                <button onclick="logout()" class="bg-red-800 hover:bg-red-900 px-4 py-2 rounded-lg transition-colors">
+                    ออกจากระบบ
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Login Page -->
+        <div id="loginPage" class="animate-fade-in">
+            <div class="max-w-md mx-auto bg-white rounded-2xl card-shadow p-8">
+                <div class="text-center mb-8">
+                    <div class="bg-red-600 text-white rounded-full w-20 h-20 flex items-center justify-center font-bold text-3xl mx-auto mb-4">
+                        TCI
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">เข้าสู่ระบบ</h2>
+                    <p class="text-gray-600">ระบบเช็กชื่อเข้าเรียน</p>
+                </div>
+
+                <form id="loginForm" class="space-y-6">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">รหัสนักศึกษา</label>
+                        <input type="text" id="studentId" maxlength="9" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                               placeholder="xxxxxxxxx" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">รหัสผ่าน (วัน/เดือน/ปีเกิด)</label>
+                        <input type="password" id="password" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                               placeholder="07052005" required>
+                    </div>
+                    <button type="submit" class="w-full btn-primary text-white py-3 rounded-lg font-medium">
+                        🔑 เข้าสู่ระบบ
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <button onclick="showRegister()" class="text-red-600 hover:text-red-800 font-medium">
+                        📝 ลงทะเบียนใหม่
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Page -->
+        <div id="registerPage" class="hidden animate-fade-in">
+            <div class="max-w-2xl mx-auto bg-white rounded-2xl card-shadow p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">ลงทะเบียนผู้ใช้ใหม่</h2>
+                
+                <form id="registerForm" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">รหัสนักศึกษา</label>
+                            <input type="text" id="regStudentId" maxlength="9" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">คำนำหน้า</label>
+                            <select id="prefix" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                                <option value="">เลือกคำนำหน้า</option>
+                                <option value="นาย">นาย</option>
+                                <option value="นางสาว">นางสาว</option>
+                                <option value="นาง">นาง</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">ชื่อ</label>
+                            <input type="text" id="firstName" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">นามสกุล</label>
+                            <input type="text" id="lastName" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">สาขา</label>
+                        <input type="text" value="สาขาวิชาเทคโนโลยีและนวัตกรรมคอมพิวเตอร์" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">เบอร์โทรศัพท์</label>
+                            <input type="tel" id="phone" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">อีเมล</label>
+                            <input type="email" id="email" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">รหัสผ่าน (วัน/เดือน/ปีเกิด)</label>
+                        <input type="password" id="regPassword" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                               placeholder="07052005" required>
+                    </div>
+
+                    <div class="flex space-x-4">
+                        <button type="submit" class="flex-1 btn-primary text-white py-3 rounded-lg font-medium">
+                            ลงทะเบียน
+                        </button>
+                        <button type="button" onclick="showLogin()" 
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors">
+                            ยกเลิก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Student Dashboard -->
+        <div id="studentDashboard" class="hidden animate-fade-in">
+            <div class="mb-8">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                    <h2 class="text-2xl font-bold text-blue-800 mb-1">👩‍🎓 ส่วนของนักศึกษา</h2>
+                    <p class="text-blue-600">จัดการการเรียนและเช็กชื่อเข้าเรียน</p>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <button onclick="showQRScanner()" class="bg-green-50 hover:bg-green-100 p-6 rounded-lg text-center transition-colors border-2 border-green-200">
+                    <div class="text-4xl mb-3">📱</div>
+                    <h3 class="text-xl font-bold text-green-800 mb-2">สแกน QR ลงทะเบียน</h3>
+                    <p class="text-green-600 text-sm">สแกน QR Code จากอาจารย์เพื่อลงทะเบียนเข้าร่วมรายวิชาใหม่</p>
+                </button>
+                <button onclick="showProfile()" class="bg-purple-50 hover:bg-purple-100 p-6 rounded-lg text-center transition-colors border-2 border-purple-200">
+                    <div class="text-4xl mb-3">👤</div>
+                    <h3 class="text-xl font-bold text-purple-800 mb-2">ข้อมูลส่วนตัว</h3>
+                    <p class="text-purple-600 text-sm">แก้ไขข้อมูลส่วนตัว</p>
+                </button>
+                <button onclick="showAllAttendanceHistory()" class="bg-blue-50 hover:bg-blue-100 p-6 rounded-lg text-center transition-colors border-2 border-blue-200">
+                    <div class="text-4xl mb-3">📊</div>
+                    <h3 class="text-xl font-bold text-blue-800 mb-2">ประวัติการเข้าเรียน</h3>
+                    <p class="text-blue-600 text-sm">ดูประวัติการเข้าเรียนทั้งหมด</p>
+                </button>
+                <button onclick="showDetailedAnalytics()" class="bg-orange-50 hover:bg-orange-100 p-6 rounded-lg text-center transition-colors border-2 border-orange-200">
+                    <div class="text-4xl mb-3">📈</div>
+                    <h3 class="text-xl font-bold text-orange-800 mb-2">วิเคราะห์การเข้าเรียน</h3>
+                    <p class="text-orange-600 text-sm">สถิติรายละเอียดและแนวโน้ม</p>
+                </button>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">รายวิชาที่เรียน</h3>
+                <p class="text-gray-600">เลือกรายวิชาเพื่อเช็กชื่อเข้าเรียน</p>
+            </div>
+
+            <div id="studentCourses" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Courses will be loaded here -->
+            </div>
+
+            <!-- Student Stats -->
+            <div class="mt-12">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">สถิติการเข้าเรียน</h3>
+                <div id="studentStats" class="grid md:grid-cols-3 gap-6">
+                    <!-- Stats will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher Dashboard -->
+        <div id="teacherDashboard" class="hidden animate-fade-in">
+            <div class="mb-8">
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                    <h2 class="text-2xl font-bold text-red-800 mb-1">👨‍🏫 ส่วนของอาจารย์</h2>
+                    <p class="text-red-600">สร้างรายวิชา, สร้าง QR Code, ตรวจรายงาน, ให้คะแนน</p>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">จัดการรายวิชา</h3>
+                    <p class="text-gray-600">สร้างและจัดการรายวิชาทั้งหมด</p>
+                </div>
+                <button onclick="showCreateCourse()" class="btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                    + สร้างรายวิชาใหม่
+                </button>
+            </div>
+
+            <div id="teacherCourses" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Courses will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Create Course Modal -->
+        <div id="createCourseModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">สร้างรายวิชาใหม่</h3>
+                
+                <form id="createCourseForm" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">รหัสวิชา</label>
+                            <input type="text" id="courseCode" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">หน่วยกิต</label>
+                            <input type="number" id="credits" min="1" max="6" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">ชื่อรายวิชา</label>
+                        <input type="text" id="courseName" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">วันเรียน</label>
+                            <select id="courseDay" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                                <option value="">เลือกวัน</option>
+                                <option value="จันทร์">จันทร์</option>
+                                <option value="อังคาร">อังคาร</option>
+                                <option value="พุธ">พุธ</option>
+                                <option value="พฤหัสบดี">พฤหัสบดี</option>
+                                <option value="ศุกร์">ศุกร์</option>
+                                <option value="เสาร์">เสาร์</option>
+                                <option value="อาทิตย์">อาทิตย์</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">เวลาเรียน</label>
+                            <input type="text" id="courseTime" placeholder="09:00-12:00" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">ห้องเรียน</label>
+                        <input type="text" id="classroom" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                    </div>
+
+                    <div class="flex space-x-4">
+                        <button type="submit" class="flex-1 btn-primary text-white py-3 rounded-lg font-medium">
+                            สร้างรายวิชา
+                        </button>
+                        <button type="button" onclick="hideCreateCourse()" 
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors">
+                            ยกเลิก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Check-in Modal -->
+        <div id="checkinModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">เช็กชื่อเข้าเรียน</h3>
+                
+                <div id="checkinSteps" class="space-y-6">
+                    <!-- Step 1: QR Code -->
+                    <div id="step1" class="text-center">
+                        <div class="bg-red-50 p-6 rounded-lg mb-4">
+                            <div id="qrcode" class="qr-container flex justify-center mb-4"></div>
+                            <p class="text-gray-600">สแกน QR Code นี้เพื่อเช็กชื่อ</p>
+                            <p class="text-sm text-red-600 mt-2">QR Code จะอัปเดตทุก 30 วินาที</p>
+                        </div>
+                        <button onclick="simulateQRScan()" class="btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                            จำลองการสแกน QR
+                        </button>
+                    </div>
+
+                    <!-- Step 2: GPS Check -->
+                    <div id="step2" class="hidden text-center">
+                        <div class="bg-blue-50 p-6 rounded-lg mb-4">
+                            <div class="text-4xl mb-4">📍</div>
+                            <p class="text-gray-600">กำลังตรวจสอบตำแหน่ง...</p>
+                            <div class="mt-4">
+                                <div class="bg-blue-200 rounded-full h-2">
+                                    <div id="gpsProgress" class="bg-blue-600 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Face Recognition -->
+                    <div id="step3" class="hidden text-center">
+                        <div class="bg-green-50 p-6 rounded-lg mb-4">
+                            <div class="text-4xl mb-4">📸</div>
+                            <p class="text-gray-600 mb-4">ถ่ายเซลฟี่เพื่อยืนยันตัวตน</p>
+                            <button onclick="simulateFaceRecognition()" class="btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                                เริ่มถ่ายภาพ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Success -->
+                    <div id="stepSuccess" class="hidden text-center">
+                        <div class="bg-green-50 p-6 rounded-lg mb-4">
+                            <div class="text-6xl mb-4">✅</div>
+                            <h4 class="text-xl font-bold text-green-600 mb-2">เช็กชื่อสำเร็จ!</h4>
+                            <p class="text-gray-600">บันทึกการเข้าเรียนเรียบร้อยแล้ว</p>
+                            <p class="text-sm text-gray-500 mt-2" id="checkinTime"></p>
+                        </div>
+                        <button onclick="closeCheckin()" class="btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                            ปิด
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Scanner Modal -->
+        <div id="qrScannerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">สแกน QR ลงทะเบียน</h3>
+                
+                <div id="qrScannerContent">
+                    <!-- Initial state -->
+                    <div id="scannerInitial" class="bg-green-50 p-6 rounded-lg mb-6">
+                        <div class="text-center mb-4">
+                            <div class="text-6xl mb-4">📱</div>
+                            <div class="border-4 border-dashed border-green-300 rounded-lg p-8 mb-4">
+                                <p class="text-green-600 font-medium">พร้อมเปิดกล้องสแกน QR Code</p>
+                                <p class="text-green-500 text-sm mt-2">คลิกปุ่มด้านล่างเพื่อเริ่มต้น</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg">
+                            <h4 class="font-bold text-green-800 mb-2">📋 วิธีใช้งาน:</h4>
+                            <ol class="text-green-700 text-sm space-y-1">
+                                <li>1. ขออาจารย์แสดง QR Code ลงทะเบียนรายวิชา</li>
+                                <li>2. คลิกปุ่ม "เปิดกล้องสแกน QR Code"</li>
+                                <li>3. วาง QR Code ให้อยู่ในกรอบกล้อง</li>
+                                <li>4. ระบบจะลงทะเบียนคุณเข้ารายวิชาอัตโนมัติ</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Camera view -->
+                    <div id="cameraView" class="hidden">
+                        <div class="bg-black rounded-lg overflow-hidden mb-4 relative">
+                            <video id="qrVideo" class="w-full h-64 object-cover"></video>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="border-4 border-green-400 w-48 h-48 rounded-lg"></div>
+                            </div>
+                            <div class="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg text-sm">
+                                🔍 กำลังสแกน...
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-gray-600 text-sm mb-4">วาง QR Code ในกรอบสี่เหลี่ยม</p>
+                            <button onclick="stopQRScanner()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                                หยุดสแกน
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Success state -->
+                    <div id="scanSuccess" class="hidden text-center">
+                        <div class="bg-green-50 p-6 rounded-lg mb-4">
+                            <div class="text-6xl mb-4">✅</div>
+                            <h4 class="text-xl font-bold text-green-600 mb-2">สแกนสำเร็จ!</h4>
+                            <p class="text-gray-600" id="scannedCourseInfo">กำลังลงทะเบียนเข้ารายวิชา...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-4" id="scannerButtons">
+                    <button onclick="startQRScanner()" class="flex-1 btn-primary text-white py-3 rounded-lg font-medium">
+                        📷 เปิดกล้องสแกน QR Code
+                    </button>
+                    <button onclick="closeQRScanner()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors">
+                        ยกเลิก
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Modal -->
+        <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">ข้อมูลส่วนตัว</h3>
+                    <button onclick="closeProfile()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="text-center mb-8">
+                    <div class="bg-purple-50 p-6 rounded-lg inline-block">
+                        <div class="text-6xl mb-4">👤</div>
+                        <h4 class="text-xl font-bold text-purple-800 mb-2">ข้อมูลส่วนตัว</h4>
+                        <p class="text-purple-600">จัดการข้อมูลส่วนตัวของคุณ</p>
+                    </div>
+                </div>
+
+                <div id="profileContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Course History Modal -->
+        <div id="courseHistoryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800" id="courseHistoryTitle">ประวัติการเข้าเรียน</h3>
+                    <button onclick="closeCourseHistory()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="courseHistoryContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- All Attendance History Modal -->
+        <div id="allAttendanceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">📊 ประวัติการเข้าเรียนทั้งหมด</h3>
+                    <button onclick="closeAllAttendanceHistory()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="allAttendanceContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Analytics Modal -->
+        <div id="detailedAnalyticsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">📈 วิเคราะห์การเข้าเรียน</h3>
+                    <button onclick="closeDetailedAnalytics()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="detailedAnalyticsContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Registration QR Modal -->
+        <div id="courseRegistrationQRModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">QR Code ลงทะเบียนเรียน</h3>
+                    <button onclick="closeCourseRegistrationQR()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="registrationQRContent" class="text-center">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Management Modal -->
+        <div id="courseManagementModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800" id="courseManagementTitle">จัดการรายวิชา</h3>
+                    <button onclick="closeCourseManagement()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <button onclick="showEditCourse()" class="bg-purple-50 hover:bg-purple-100 p-6 rounded-lg text-center transition-colors">
+                        <div class="text-3xl mb-2">✏️</div>
+                        <h4 class="font-bold text-gray-800">แก้ไขข้อมูล</h4>
+                        <p class="text-sm text-gray-600">แก้ไขข้อมูลรายวิชา</p>
+                    </button>
+                    <button onclick="showQRCode()" class="bg-red-50 hover:bg-red-100 p-6 rounded-lg text-center transition-colors">
+                        <div class="text-3xl mb-2">📱</div>
+                        <h4 class="font-bold text-gray-800">QR เช็กชื่อ</h4>
+                        <p class="text-sm text-gray-600">สร้าง QR สำหรับเช็กชื่อ</p>
+                    </button>
+                    <button onclick="showAttendanceReport()" class="bg-blue-50 hover:bg-blue-100 p-6 rounded-lg text-center transition-colors">
+                        <div class="text-3xl mb-2">📊</div>
+                        <h4 class="font-bold text-gray-800">รายงาน</h4>
+                        <p class="text-sm text-gray-600">ดูสถิติการเข้าเรียน</p>
+                    </button>
+                    <button onclick="showStudentManagement()" class="bg-green-50 hover:bg-green-100 p-6 rounded-lg text-center transition-colors">
+                        <div class="text-3xl mb-2">👥</div>
+                        <h4 class="font-bold text-gray-800">จัดการนักศึกษา</h4>
+                        <p class="text-sm text-gray-600">เพิ่ม/ลบนักศึกษา</p>
+                    </button>
+                </div>
+
+                <div id="courseManagementContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data
+        let users = [
+            {
+                id: '664257001',
+                password: '23082547',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'กรฤต',
+                lastName: 'ลิ้มเจริญ',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257002',
+                password: '29112547',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'กฤตพรต',
+                lastName: 'ขจรกีรติกุล',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257003',
+                password: '02072547',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'กฤติน',
+                lastName: 'ขำเจริญ',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257004',
+                password: '11022548',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'คณิน',
+                lastName: 'งามเปาะ',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257006',
+                password: '25092547',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'ไชยวัฒน์',
+                lastName: 'เเตงตุ่น',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257008',
+                password: '20052548',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'นภสินธุ์',
+                lastName: 'ใจภักดี',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257009',
+                password: '06012548',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'บูรพา',
+                lastName: 'สวัสดิ์คุ้ม',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257010',
+                password: '16042546',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'ปาราเมศ',
+                lastName: 'ทนทาน',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257012',
+                password: '09052547',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'มูฮัมหมัดฟาอีส',
+                lastName: 'เต๊ะ',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257013',
+                password: '15042548',
+                type: 'student',
+                prefix: 'นาย',
+                firstName: 'สุภานันท์',
+                lastName: 'ภารุนัย',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257014',
+                password: '04102547',
+                type: 'student',
+                prefix: 'นางสาว',
+                firstName: 'กมลวรรณ',
+                lastName: 'หาญมาก',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257018',
+                password: '02072546',
+                type: 'student',
+                prefix: 'นางสาว',
+                firstName: 'ไพลิน',
+                lastName: 'นาควิเชตร์',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257019',
+                password: '10072548',
+                type: 'student',
+                prefix: 'นางสาว',
+                firstName: 'วรุณรัตน์',
+                lastName: 'วงศ์วณิชพัชระ',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257020',
+                password: '03032548',
+                type: 'student',
+                prefix: 'นางสาว',
+                firstName: 'วิณิชยา',
+                lastName: 'ไม้ตรา',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257021',
+                password: '09032547',
+                type: 'student',
+                prefix: 'นางสาว',
+                firstName: 'สิดาพร',
+                lastName: 'ชามโสม',
+                phone: '0812345678',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '664257022',
+                password: '29072547',
+                type: 'student',
+                prefix: 'นางสาว',
+                firstName: 'สุพิชญา',
+                lastName: 'คำเครือ',
+                phone: '0994860949',
+                email: 'supichya@email.com',
+                courses: ['TCI66617', 'TCI66618', 'TCI66716']
+            },
+            {
+                id: '987654321',
+                password: '11111111',
+                type: 'teacher',
+                prefix: 'อ.ดร.',
+                firstName: 'สถาพร',
+                lastName: 'จะนุ',
+                phone: '0898765432',
+                email: 'sathaporn@email.com'
+            }
+        ];
+
+        let courses = [
+            {
+                id: 'TCI66617',
+                code: 'TCI66617',
+                name: 'กฎหมายและจริยธรรมทางเทคโนโลยีและนวัตกรรมคอมพิวเตอร์',
+                credits: 3,
+                day: 'จันทร์',
+                time: '08:30-12:30',
+                classroom: 'ห้อง SMC',
+                teacher: '987654321',
+                students: ['664257001','664257002','664257003','664257004','664257006','664257008','664257009','664257010','664257012','664257013','664257014','664257018','664257019','664257020','664257021','664257022',],
+                attendance: []
+            },
+            {
+                id: 'TCI66618',
+                code: 'TCI66618',
+                name: 'การพัฒนาเว็บแอปพลิเคชันเพื่องานนวัตกรรมคอมพิวเตอร์',
+                credits: 3,
+                day: 'จันทร์',
+                time: '13:30-17:30',
+                classroom: 'ห้อง MAC',
+                teacher: '987654321',
+                students: ['664257001','664257002','664257003','664257004','664257006','664257008','664257009','664257010','664257012','664257013','664257014','664257018','664257019','664257020','664257021','664257022',],
+                attendance: []
+            },
+            {
+                id: 'TCI66716',
+                code: 'TCI66716',
+                name: 'การออกแบบและพัฒนานวัตกรรมเกมคอมพิวเตอร์',
+                credits: 3,
+                day: 'อังคาร',
+                time: '13:30-17:30',
+                classroom: 'ห้อง MAC',
+                teacher: '987654321',
+                students: ['664257001','664257002','664257003','664257004','664257006','664257008','664257009','664257010','664257012','664257013','664257014','664257018','664257019','664257020','664257021','664257022',],
+                attendance: []
+            }
+        ];
+
+        let currentUser = null;
+        let currentCourse = null;
+        let qrUpdateInterval = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+        });
+
+        // Login functionality
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const studentId = document.getElementById('studentId').value;
+            const password = document.getElementById('password').value;
+
+            const user = users.find(u => u.id === studentId && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showDashboard();
+            } else {
+                alert('รหัสนักศึกษาหรือรหัสผ่านไม่ถูกต้อง');
+            }
+        });
+
+        // Register functionality
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newUser = {
+                id: document.getElementById('regStudentId').value,
+                password: document.getElementById('regPassword').value,
+                type: 'student',
+                prefix: document.getElementById('prefix').value,
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                courses: []
+            };
+
+            // Check if user already exists
+            if (users.find(u => u.id === newUser.id)) {
+                alert('รหัสนักศึกษานี้มีอยู่ในระบบแล้ว');
+                return;
+            }
+
+            users.push(newUser);
+            alert('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ');
+            showLogin();
+        });
+
+        // Create course functionality
+        document.getElementById('createCourseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newCourse = {
+                id: document.getElementById('courseCode').value,
+                code: document.getElementById('courseCode').value,
+                name: document.getElementById('courseName').value,
+                credits: parseInt(document.getElementById('credits').value),
+                day: document.getElementById('courseDay').value,
+                time: document.getElementById('courseTime').value,
+                classroom: document.getElementById('classroom').value,
+                teacher: currentUser.id,
+                students: [],
+                attendance: []
+            };
+
+            courses.push(newCourse);
+            
+            // Generate sample QR code for the new course
+            generateSampleQRCode(newCourse);
+            
+            alert('สร้างรายวิชาสำเร็จ!');
+            hideCreateCourse();
+            loadTeacherCourses();
+        });
+
+        function showLogin() {
+            hideAllPages();
+            document.getElementById('loginPage').classList.remove('hidden');
+        }
+
+        function showRegister() {
+            hideAllPages();
+            document.getElementById('registerPage').classList.remove('hidden');
+        }
+
+        function showDashboard() {
+            hideAllPages();
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('userName').textContent = `${currentUser.prefix}${currentUser.firstName} ${currentUser.lastName}`;
+
+            if (currentUser.type === 'student') {
+                document.getElementById('studentDashboard').classList.remove('hidden');
+                loadStudentCourses();
+                loadStudentStats();
+            } else {
+                document.getElementById('teacherDashboard').classList.remove('hidden');
+                loadTeacherCourses();
+            }
+        }
+
+        function hideAllPages() {
+            const pages = ['loginPage', 'registerPage', 'studentDashboard', 'teacherDashboard'];
+            pages.forEach(page => {
+                document.getElementById(page).classList.add('hidden');
+            });
+        }
+
+        function loadStudentCourses() {
+            const container = document.getElementById('studentCourses');
+            const studentCourses = courses.filter(course => course.students.includes(currentUser.id));
+            
+            container.innerHTML = studentCourses.map(course => `
+                <div class="bg-white rounded-2xl card-shadow p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">${course.code}</h3>
+                            <p class="text-gray-600">${course.name}</p>
+                        </div>
+                        <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-medium">
+                            ${course.credits} หน่วยกิต
+                        </span>
+                    </div>
+                    <div class="space-y-2 mb-6">
+                        <p class="text-sm text-gray-600">📅 ${course.day} ${course.time}</p>
+                        <p class="text-sm text-gray-600">🏫 ${course.classroom}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="startCheckin('${course.id}')" 
+                                class="btn-primary text-white py-3 rounded-lg font-medium text-sm">
+                            ✅ เช็กชื่อ
+                        </button>
+                        <button onclick="showCourseHistory('${course.id}')" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium text-sm transition-colors">
+                            📋 ประวัติ
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadTeacherCourses() {
+            const container = document.getElementById('teacherCourses');
+            const teacherCourses = courses.filter(course => course.teacher === currentUser.id);
+            
+            container.innerHTML = teacherCourses.map(course => `
+                <div class="bg-white rounded-2xl card-shadow p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">${course.code}</h3>
+                            <p class="text-gray-600">${course.name}</p>
+                        </div>
+                        <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-medium">
+                            ${course.credits} หน่วยกิต
+                        </span>
+                    </div>
+                    <div class="space-y-2 mb-6">
+                        <p class="text-sm text-gray-600">📅 ${course.day} ${course.time}</p>
+                        <p class="text-sm text-gray-600">🏫 ${course.classroom}</p>
+                        <p class="text-sm text-gray-600">👥 ${course.students.length} คน</p>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="manageCourse('${course.id}')" 
+                                class="btn-primary text-white py-3 rounded-lg font-medium text-xs">
+                            📊 จัดการ
+                        </button>
+                        <button onclick="showCourseRegistrationQR('${course.id}')" 
+                                class="bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium text-xs transition-colors">
+                            📱 QR ลงทะเบียน
+                        </button>
+                        <button onclick="deleteCourseFromList('${course.id}')" 
+                                class="bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium text-xs transition-colors">
+                            🗑️ ลบ
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadStudentStats() {
+            const container = document.getElementById('studentStats');
+            const studentCourses = courses.filter(course => course.students.includes(currentUser.id));
+            
+            container.innerHTML = studentCourses.map(course => {
+                const totalClasses = 16; // Assume 16 weeks per semester
+                const attendedClasses = course.attendance.filter(a => a.studentId === currentUser.id).length;
+                const percentage = Math.round((attendedClasses / totalClasses) * 100);
+                
+                return `
+                    <div class="bg-white rounded-2xl card-shadow p-6">
+                        <h4 class="text-lg font-bold text-gray-800 mb-2">${course.code}</h4>
+                        <div class="text-3xl font-bold ${percentage >= 80 ? 'text-green-600' : 'text-red-600'} mb-2">
+                            ${percentage}%
+                        </div>
+                        <p class="text-sm text-gray-600">${attendedClasses}/${totalClasses} ครั้ง</p>
+                        ${percentage < 80 ? '<p class="text-xs text-red-600 mt-2">⚠️ เข้าเรียนน้อยกว่า 80%</p>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function startCheckin(courseId) {
+            currentCourse = courses.find(c => c.id === courseId);
+            document.getElementById('checkinModal').classList.remove('hidden');
+            
+            // Reset steps
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('stepSuccess').classList.add('hidden');
+            
+            generateQRCode();
+        }
+
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            const qrData = `TCI-CHECKIN:${currentCourse.id}:${Date.now()}:${currentUser.id}`;
+            
+            QRCode.toCanvas(qrData, { width: 200, height: 200 }, function (error, canvas) {
+                if (error) console.error(error);
+                qrContainer.appendChild(canvas);
+            });
+
+            // Update QR code every 30 seconds
+            if (qrUpdateInterval) clearInterval(qrUpdateInterval);
+            qrUpdateInterval = setInterval(generateQRCode, 30000);
+        }
+
+        function simulateQRScan() {
+            if (qrUpdateInterval) clearInterval(qrUpdateInterval);
+            
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            
+            // Simulate GPS check
+            let progress = 0;
+            const gpsInterval = setInterval(() => {
+                progress += 20;
+                document.getElementById('gpsProgress').style.width = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(gpsInterval);
+                    setTimeout(() => {
+                        document.getElementById('step2').classList.add('hidden');
+                        document.getElementById('step3').classList.remove('hidden');
+                    }, 500);
+                }
+            }, 200);
+        }
+
+        function simulateFaceRecognition() {
+            document.getElementById('step3').classList.add('hidden');
+            
+            // Simulate face recognition processing
+            setTimeout(() => {
+                // Record attendance
+                const attendance = {
+                    studentId: currentUser.id,
+                    courseId: currentCourse.id,
+                    timestamp: new Date(),
+                    status: 'present'
+                };
+                
+                currentCourse.attendance.push(attendance);
+                
+                document.getElementById('checkinTime').textContent = 
+                    `เวลา: ${new Date().toLocaleString('th-TH')}`;
+                document.getElementById('stepSuccess').classList.remove('hidden');
+                
+                // Update student stats
+                loadStudentStats();
+            }, 2000);
+        }
+
+        function closeCheckin() {
+            document.getElementById('checkinModal').classList.add('hidden');
+            if (qrUpdateInterval) clearInterval(qrUpdateInterval);
+        }
+
+        function manageCourse(courseId) {
+            currentCourse = courses.find(c => c.id === courseId);
+            document.getElementById('courseManagementModal').classList.remove('hidden');
+            document.getElementById('courseManagementTitle').textContent = 
+                `จัดการรายวิชา ${currentCourse.code}`;
+            showQRCode();
+        }
+
+        function closeCourseManagement() {
+            document.getElementById('courseManagementModal').classList.add('hidden');
+            if (qrUpdateInterval) clearInterval(qrUpdateInterval);
+        }
+
+        function showQRCode() {
+            const content = document.getElementById('courseManagementContent');
+            content.innerHTML = `
+                <div class="text-center">
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">QR Code สำหรับเช็กชื่อ</h4>
+                    <div class="bg-gray-50 p-8 rounded-lg inline-block">
+                        <div id="teacherQRCode" class="qr-container"></div>
+                        <p class="text-sm text-gray-600 mt-4">QR Code อัปเดตทุก 30 วินาที</p>
+                    </div>
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <p class="text-blue-800 font-medium">วิธีใช้งาน:</p>
+                        <p class="text-blue-600 text-sm mt-2">1. แสดง QR Code นี้บนจอ</p>
+                        <p class="text-blue-600 text-sm">2. ให้นักศึกษาสแกนผ่านแอป</p>
+                        <p class="text-blue-600 text-sm">3. ระบบจะตรวจสอบ GPS และใบหน้าอัตโนมัติ</p>
+                    </div>
+                </div>
+            `;
+            
+            generateTeacherQRCode();
+        }
+
+        function generateTeacherQRCode() {
+            const qrContainer = document.getElementById('teacherQRCode');
+            if (!qrContainer) return;
+            
+            qrContainer.innerHTML = '';
+            
+            const qrData = `TCI-CHECKIN:${currentCourse.id}:${Date.now()}:TEACHER`;
+            
+            QRCode.toCanvas(qrData, { width: 300, height: 300 }, function (error, canvas) {
+                if (error) console.error(error);
+                qrContainer.appendChild(canvas);
+            });
+
+            // Update QR code every 30 seconds
+            if (qrUpdateInterval) clearInterval(qrUpdateInterval);
+            qrUpdateInterval = setInterval(generateTeacherQRCode, 30000);
+        }
+
+        function showAttendanceReport() {
+            const content = document.getElementById('courseManagementContent');
+            const students = users.filter(u => currentCourse.students.includes(u.id));
+            
+            content.innerHTML = `
+                <div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">รายงานการเข้าเรียน</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full bg-white rounded-lg overflow-hidden">
+                            <thead class="bg-red-600 text-white">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">รหัสนักศึกษา</th>
+                                    <th class="px-4 py-3 text-left">ชื่อ-นามสกุล</th>
+                                    <th class="px-4 py-3 text-center">เข้าเรียน</th>
+                                    <th class="px-4 py-3 text-center">เปอร์เซ็นต์</th>
+                                    <th class="px-4 py-3 text-center">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${students.map(student => {
+                                    const totalClasses = 16;
+                                    const attendedClasses = currentCourse.attendance.filter(a => a.studentId === student.id).length;
+                                    const percentage = Math.round((attendedClasses / totalClasses) * 100);
+                                    
+                                    return `
+                                        <tr class="border-b border-gray-200">
+                                            <td class="px-4 py-3">${student.id}</td>
+                                            <td class="px-4 py-3">${student.prefix}${student.firstName} ${student.lastName}</td>
+                                            <td class="px-4 py-3 text-center">${attendedClasses}/${totalClasses}</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <span class="px-2 py-1 rounded-full text-sm ${percentage >= 80 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                                                    ${percentage}%
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-center">
+                                                ${percentage >= 80 ? '✅ ผ่าน' : '❌ ไม่ผ่าน'}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-6 flex space-x-4">
+                        <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            📊 ส่งออก Excel
+                        </button>
+                        <button onclick="exportToPDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            📄 ส่งออก PDF
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showEditCourse() {
+            const content = document.getElementById('courseManagementContent');
+            content.innerHTML = `
+                <div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">แก้ไขข้อมูลรายวิชา</h4>
+                    <form id="editCourseForm" class="space-y-6">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">รหัสวิชา</label>
+                                <input type="text" id="editCourseCode" value="${currentCourse.code}" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">หน่วยกิต</label>
+                                <input type="number" id="editCredits" value="${currentCourse.credits}" min="1" max="6" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">ชื่อรายวิชา</label>
+                            <input type="text" id="editCourseName" value="${currentCourse.name}" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">วันเรียน</label>
+                                <select id="editCourseDay" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                                    <option value="จันทร์" ${currentCourse.day === 'จันทร์' ? 'selected' : ''}>จันทร์</option>
+                                    <option value="อังคาร" ${currentCourse.day === 'อังคาร' ? 'selected' : ''}>อังคาร</option>
+                                    <option value="พุธ" ${currentCourse.day === 'พุธ' ? 'selected' : ''}>พุธ</option>
+                                    <option value="พฤหัสบดี" ${currentCourse.day === 'พฤหัสบดี' ? 'selected' : ''}>พฤหัสบดี</option>
+                                    <option value="ศุกร์" ${currentCourse.day === 'ศุกร์' ? 'selected' : ''}>ศุกร์</option>
+                                    <option value="เสาร์" ${currentCourse.day === 'เสาร์' ? 'selected' : ''}>เสาร์</option>
+                                    <option value="อาทิตย์" ${currentCourse.day === 'อาทิตย์' ? 'selected' : ''}>อาทิตย์</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">เวลาเรียน</label>
+                                <input type="text" id="editCourseTime" value="${currentCourse.time}" placeholder="09:00-12:00" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">ห้องเรียน</label>
+                            <input type="text" id="editClassroom" value="${currentCourse.classroom}" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+
+                        <div class="flex space-x-4">
+                            <button type="submit" class="flex-1 btn-primary text-white py-3 rounded-lg font-medium">
+                                💾 บันทึกการเปลี่ยนแปลง
+                            </button>
+                            <button type="button" onclick="deleteCourse()" 
+                                    class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                🗑️ ลบรายวิชา
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.getElementById('editCourseForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Update course data
+                currentCourse.code = document.getElementById('editCourseCode').value;
+                currentCourse.name = document.getElementById('editCourseName').value;
+                currentCourse.credits = parseInt(document.getElementById('editCredits').value);
+                currentCourse.day = document.getElementById('editCourseDay').value;
+                currentCourse.time = document.getElementById('editCourseTime').value;
+                currentCourse.classroom = document.getElementById('editClassroom').value;
+                
+                // Update in courses array
+                const courseIndex = courses.findIndex(c => c.id === currentCourse.id);
+                if (courseIndex !== -1) {
+                    courses[courseIndex] = currentCourse;
+                }
+                
+                alert('บันทึกการเปลี่ยนแปลงเรียบร้อยแล้ว!');
+                loadTeacherCourses();
+                
+                // Update modal title
+                document.getElementById('courseManagementTitle').textContent = 
+                    `จัดการรายวิชา ${currentCourse.code}`;
+            });
+        }
+
+        function deleteCourse() {
+            // Check if current user is the teacher of this course
+            if (currentCourse.teacher !== currentUser.id) {
+                alert('คุณไม่มีสิทธิ์ลบรายวิชานี้');
+                return;
+            }
+            
+            if (confirm(`คุณต้องการลบรายวิชา ${currentCourse.code} - ${currentCourse.name} หรือไม่?\n\nการลบจะไม่สามารถกู้คืนได้ และจะลบข้อมูลที่เกี่ยวข้องทั้งหมด:\n• นักศึกษาที่ลงทะเบียน (${currentCourse.students.length} คน)\n• ประวัติการเข้าเรียนทั้งหมด (${currentCourse.attendance.length} รายการ)`)) {
+                // Store course info for confirmation message
+                const courseInfo = {
+                    code: currentCourse.code,
+                    name: currentCourse.name,
+                    studentsCount: currentCourse.students.length,
+                    attendanceCount: currentCourse.attendance.length
+                };
+                
+                // Remove course from courses array
+                const courseIndex = courses.findIndex(c => c.id === currentCourse.id);
+                if (courseIndex !== -1) {
+                    courses.splice(courseIndex, 1);
+                }
+                
+                // Remove course from all students
+                users.forEach(user => {
+                    if (user.courses && user.courses.includes(currentCourse.id)) {
+                        user.courses = user.courses.filter(courseId => courseId !== currentCourse.id);
+                    }
+                });
+                
+                // Update current user if they were enrolled
+                if (currentUser && currentUser.courses && currentUser.courses.includes(currentCourse.id)) {
+                    currentUser.courses = currentUser.courses.filter(courseId => courseId !== currentCourse.id);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+                
+                alert(`ลบรายวิชา ${courseInfo.code} - ${courseInfo.name} เรียบร้อยแล้ว\n\n• ลบนักศึกษาที่ลงทะเบียน: ${courseInfo.studentsCount} คน\n• ลบประวัติการเข้าเรียน: ${courseInfo.attendanceCount} รายการ`);
+                closeCourseManagement();
+                loadTeacherCourses();
+                
+                // Refresh student dashboard if current user is a student
+                if (currentUser && currentUser.type === 'student') {
+                    loadStudentCourses();
+                    loadStudentStats();
+                }
+            }
+        }
+
+        function deleteCourseFromList(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            if (!course) return;
+            
+            // Check if current user is the teacher of this course
+            if (course.teacher !== currentUser.id) {
+                alert('คุณไม่มีสิทธิ์ลบรายวิชานี้');
+                return;
+            }
+            
+            if (confirm(`คุณต้องการลบรายวิชา ${course.code} - ${course.name} หรือไม่?\n\nการลบจะไม่สามารถกู้คืนได้ และจะลบข้อมูลที่เกี่ยวข้องทั้งหมด:\n• นักศึกษาที่ลงทะเบียน (${course.students.length} คน)\n• ประวัติการเข้าเรียนทั้งหมด (${course.attendance.length} รายการ)`)) {
+                // Remove course from courses array
+                const courseIndex = courses.findIndex(c => c.id === courseId);
+                if (courseIndex !== -1) {
+                    courses.splice(courseIndex, 1);
+                }
+                
+                // Remove course from all students
+                users.forEach(user => {
+                    if (user.courses && user.courses.includes(courseId)) {
+                        user.courses = user.courses.filter(id => id !== courseId);
+                    }
+                });
+                
+                // Update current user if they were enrolled
+                if (currentUser && currentUser.courses && currentUser.courses.includes(courseId)) {
+                    currentUser.courses = currentUser.courses.filter(id => id !== courseId);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+                
+                alert(`ลบรายวิชา ${course.code} - ${course.name} เรียบร้อยแล้ว\n\n• ลบนักศึกษาที่ลงทะเบียน: ${course.students.length} คน\n• ลบประวัติการเข้าเรียน: ${course.attendance.length} รายการ`);
+                loadTeacherCourses();
+                
+                // Refresh student dashboard if current user is a student
+                if (currentUser && currentUser.type === 'student') {
+                    loadStudentCourses();
+                    loadStudentStats();
+                }
+            }
+        }
+
+        function showStudentManagement() {
+            const content = document.getElementById('courseManagementContent');
+            const enrolledStudents = users.filter(u => currentCourse.students.includes(u.id));
+            const availableStudents = users.filter(u => u.type === 'student' && !currentCourse.students.includes(u.id));
+            
+            content.innerHTML = `
+                <div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">จัดการนักศึกษา</h4>
+                    
+                    <!-- Add Student Section -->
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                        <h5 class="text-lg font-bold text-green-800 mb-4">➕ เพิ่มนักศึกษา</h5>
+                        <div class="flex space-x-4">
+                            <input type="text" id="addStudentId" placeholder="รหัสนักศึกษา (9 หลัก)" maxlength="9"
+                                   class="flex-1 px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <button onclick="addStudentToCourse()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                เพิ่ม
+                            </button>
+                        </div>
+                        <p class="text-green-600 text-sm mt-2">หรือให้นักศึกษาสแกน QR Code ลงทะเบียนเรียน</p>
+                    </div>
+
+                    <!-- Enrolled Students -->
+                    <div class="bg-white rounded-lg border border-gray-200">
+                        <div class="bg-gray-50 p-4 border-b border-gray-200">
+                            <h5 class="text-lg font-bold text-gray-800">👥 นักศึกษาที่ลงทะเบียนแล้ว (${enrolledStudents.length} คน)</h5>
+                        </div>
+                        <div class="p-6">
+                            ${enrolledStudents.length > 0 ? `
+                                <div class="space-y-3">
+                                    ${enrolledStudents.map(student => {
+                                        const attendanceCount = currentCourse.attendance.filter(a => a.studentId === student.id).length;
+                                        const percentage = Math.round((attendanceCount / 16) * 100);
+                                        
+                                        return `
+                                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                                <div>
+                                                    <h6 class="font-bold text-gray-800">${student.id}</h6>
+                                                    <p class="text-gray-600">${student.prefix}${student.firstName} ${student.lastName}</p>
+                                                    <p class="text-sm text-gray-500">📧 ${student.email} | 📱 ${student.phone}</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <div class="text-lg font-bold ${percentage >= 80 ? 'text-green-600' : 'text-red-600'}">${percentage}%</div>
+                                                    <p class="text-sm text-gray-600">${attendanceCount}/16 ครั้ง</p>
+                                                    <button onclick="removeStudentFromCourse('${student.id}')" 
+                                                            class="mt-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                                        ลบออก
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            ` : `
+                                <div class="text-center py-8">
+                                    <div class="text-6xl mb-4">👥</div>
+                                    <p class="text-gray-500">ยังไม่มีนักศึกษาลงทะเบียนในรายวิชานี้</p>
+                                    <p class="text-gray-400 text-sm mt-2">เพิ่มนักศึกษาด้วยรหัสนักศึกษา หรือให้สแกน QR Code</p>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+
+                    ${availableStudents.length > 0 ? `
+                        <!-- Available Students -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
+                            <h5 class="text-lg font-bold text-blue-800 mb-4">📋 นักศึกษาที่สามารถเพิ่มได้</h5>
+                            <div class="grid md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                                ${availableStudents.map(student => `
+                                    <div class="flex justify-between items-center p-3 bg-white rounded-lg border border-blue-200">
+                                        <div>
+                                            <p class="font-medium text-gray-800">${student.id}</p>
+                                            <p class="text-sm text-gray-600">${student.prefix}${student.firstName} ${student.lastName}</p>
+                                        </div>
+                                        <button onclick="addStudentToCourseById('${student.id}')" 
+                                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                            เพิ่ม
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function addStudentToCourse() {
+            const studentId = document.getElementById('addStudentId').value.trim();
+            
+            if (!studentId) {
+                alert('กรุณาใส่รหัสนักศึกษา');
+                return;
+            }
+            
+            if (studentId.length !== 9) {
+                alert('รหัสนักศึกษาต้องมี 9 หลัก');
+                return;
+            }
+            
+            const student = users.find(u => u.id === studentId && u.type === 'student');
+            
+            if (!student) {
+                alert('ไม่พบนักศึกษารหัส ' + studentId + ' ในระบบ');
+                return;
+            }
+            
+            if (currentCourse.students.includes(studentId)) {
+                alert('นักศึกษาคนนี้ลงทะเบียนในรายวิชานี้แล้ว');
+                return;
+            }
+            
+            // Add student to course
+            currentCourse.students.push(studentId);
+            
+            // Add course to student
+            if (!student.courses) student.courses = [];
+            student.courses.push(currentCourse.id);
+            
+            alert(`เพิ่ม ${student.prefix}${student.firstName} ${student.lastName} เข้ารายวิชาเรียบร้อยแล้ว`);
+            
+            // Clear input and refresh display
+            document.getElementById('addStudentId').value = '';
+            showStudentManagement();
+        }
+
+        function addStudentToCourseById(studentId) {
+            const student = users.find(u => u.id === studentId);
+            
+            // Add student to course
+            currentCourse.students.push(studentId);
+            
+            // Add course to student
+            if (!student.courses) student.courses = [];
+            student.courses.push(currentCourse.id);
+            
+            alert(`เพิ่ม ${student.prefix}${student.firstName} ${student.lastName} เข้ารายวิชาเรียบร้อยแล้ว`);
+            showStudentManagement();
+        }
+
+        function removeStudentFromCourse(studentId) {
+            const student = users.find(u => u.id === studentId);
+            
+            if (confirm(`คุณต้องการลบ ${student.prefix}${student.firstName} ${student.lastName} ออกจากรายวิชานี้หรือไม่?`)) {
+                // Remove student from course
+                currentCourse.students = currentCourse.students.filter(id => id !== studentId);
+                
+                // Remove course from student
+                if (student.courses) {
+                    student.courses = student.courses.filter(courseId => courseId !== currentCourse.id);
+                }
+                
+                // Remove attendance records
+                currentCourse.attendance = currentCourse.attendance.filter(a => a.studentId !== studentId);
+                
+                alert('ลบนักศึกษาออกจากรายวิชาเรียบร้อยแล้ว');
+                showStudentManagement();
+            }
+        }
+
+        function showGrading() {
+            const content = document.getElementById('courseManagementContent');
+            content.innerHTML = `
+                <div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">การให้คะแนนการเข้าเรียน</h4>
+                    <div class="bg-blue-50 p-6 rounded-lg mb-6">
+                        <h5 class="font-bold text-blue-800 mb-4">ตั้งค่าเปอร์เซ็นต์คะแนนเข้าเรียน</h5>
+                        <div class="flex items-center space-x-4">
+                            <label class="text-blue-700">เปอร์เซ็นต์ที่มีผลต่อเกรด:</label>
+                            <input type="number" id="attendancePercentage" value="10" min="0" max="100" 
+                                   class="px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <span class="text-blue-700">%</span>
+                            <button onclick="updateAttendanceWeight()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                บันทึก
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">รหัสนักศึกษา</th>
+                                    <th class="px-4 py-3 text-left">ชื่อ-นามสกุล</th>
+                                    <th class="px-4 py-3 text-center">เปอร์เซ็นต์เข้าเรียน</th>
+                                    <th class="px-4 py-3 text-center">คะแนนเข้าเรียน</th>
+                                    <th class="px-4 py-3 text-center">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${users.filter(u => currentCourse.students.includes(u.id)).map(student => {
+                                    const totalClasses = 16;
+                                    const attendedClasses = currentCourse.attendance.filter(a => a.studentId === student.id).length;
+                                    const percentage = Math.round((attendedClasses / totalClasses) * 100);
+                                    const attendanceScore = Math.round((percentage / 100) * 10); // Assume 10% weight
+                                    
+                                    return `
+                                        <tr class="border-b border-gray-200">
+                                            <td class="px-4 py-3">${student.id}</td>
+                                            <td class="px-4 py-3">${student.prefix}${student.firstName} ${student.lastName}</td>
+                                            <td class="px-4 py-3 text-center">${percentage}%</td>
+                                            <td class="px-4 py-3 text-center font-bold">${attendanceScore}/10</td>
+                                            <td class="px-4 py-3 text-center">
+                                                ${percentage >= 80 ? 
+                                                    '<span class="text-green-600">✅ ผ่าน</span>' : 
+                                                    '<span class="text-red-600">❌ ไม่ผ่าน</span>'
+                                                }
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showCreateCourse() {
+            document.getElementById('createCourseModal').classList.remove('hidden');
+        }
+
+        function hideCreateCourse() {
+            document.getElementById('createCourseModal').classList.add('hidden');
+            document.getElementById('createCourseForm').reset();
+        }
+
+        function updateAttendanceWeight() {
+            const percentage = document.getElementById('attendancePercentage').value;
+            alert(`อัปเดตน้ำหนักคะแนนเข้าเรียนเป็น ${percentage}% แล้ว`);
+        }
+
+        function exportToExcel() {
+            alert('กำลังส่งออกไฟล์ Excel... (ฟีเจอร์นี้จะทำงานจริงในระบบที่สมบูรณ์)');
+        }
+
+        function exportToPDF() {
+            alert('กำลังส่งออกไฟล์ PDF... (ฟีเจอร์นี้จะทำงานจริงในระบบที่สมบูรณ์)');
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            document.getElementById('userInfo').classList.add('hidden');
+            showLogin();
+        }
+
+        function checkLoginStatus() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        }
+
+        // New functions for additional features
+        function showQRScanner() {
+            document.getElementById('qrScannerModal').classList.remove('hidden');
+        }
+
+        function showCourseRegistrationQR(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            document.getElementById('courseRegistrationQRModal').classList.remove('hidden');
+            
+            const content = document.getElementById('registrationQRContent');
+            content.innerHTML = `
+                <div class="mb-6">
+                    <h4 class="text-xl font-bold text-gray-800 mb-2">${course.code}</h4>
+                    <p class="text-gray-600 mb-4">${course.name}</p>
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <p class="text-sm text-gray-600">📅 ${course.day} ${course.time}</p>
+                        <p class="text-sm text-gray-600">🏫 ${course.classroom}</p>
+                        <p class="text-sm text-gray-600">📚 ${course.credits} หน่วยกิต</p>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 p-6 rounded-lg mb-6">
+                    <div id="registrationQRCode" class="qr-container flex justify-center mb-4"></div>
+                    <p class="text-green-600 font-medium mb-2">QR Code สำหรับลงทะเบียนเรียน</p>
+                    <p class="text-green-500 text-sm">ให้นักศึกษาสแกน QR นี้เพื่อเข้าร่วมรายวิชา</p>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h5 class="font-bold text-blue-800 mb-2">📋 วิธีใช้งาน:</h5>
+                    <ol class="text-blue-700 text-sm space-y-1 text-left">
+                        <li>1. แสดง QR Code นี้ให้นักศึกษาเห็น</li>
+                        <li>2. ให้นักศึกษาเปิดแอป TCI Check-in</li>
+                        <li>3. คลิก "สแกน QR ลงทะเบียน"</li>
+                        <li>4. สแกน QR Code นี้</li>
+                        <li>5. ระบบจะลงทะเบียนนักศึกษาเข้ารายวิชาอัตโนมัติ</li>
+                    </ol>
+                </div>
+            `;
+            
+            generateRegistrationQRCode(course);
+        }
+
+        function generateRegistrationQRCode(course) {
+            const qrContainer = document.getElementById('registrationQRCode');
+            if (!qrContainer) return;
+            
+            qrContainer.innerHTML = '';
+            
+            const qrData = `TCI-REGISTER:${course.id}:${course.code}:${course.name}:${course.teacher}`;
+            
+            QRCode.toCanvas(qrData, { width: 250, height: 250 }, function (error, canvas) {
+                if (error) console.error(error);
+                qrContainer.appendChild(canvas);
+            });
+        }
+
+        function closeCourseRegistrationQR() {
+            document.getElementById('courseRegistrationQRModal').classList.add('hidden');
+        }
+
+        function closeQRScanner() {
+            // Stop camera and intervals
+            stopQRScanner();
+            
+            // Reset modal state
+            document.getElementById('scanSuccess').classList.add('hidden');
+            document.getElementById('scannerInitial').classList.remove('hidden');
+            document.getElementById('scannerButtons').classList.remove('hidden');
+            
+            // Hide modal
+            document.getElementById('qrScannerModal').classList.add('hidden');
+        }
+
+        let qrStream = null;
+        let qrScanInterval = null;
+
+        function startQRScanner() {
+            document.getElementById('scannerInitial').classList.add('hidden');
+            document.getElementById('cameraView').classList.remove('hidden');
+            document.getElementById('scannerButtons').classList.add('hidden');
+
+            // Request camera access
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            })
+            .then(stream => {
+                qrStream = stream;
+                const video = document.getElementById('qrVideo');
+                video.srcObject = stream;
+                video.play();
+
+                // Start QR code detection simulation
+                qrScanInterval = setInterval(() => {
+                    // Simulate QR code detection after 3-5 seconds
+                    if (Math.random() > 0.7) {
+                        detectQRCode();
+                    }
+                }, 1000);
+            })
+            .catch(err => {
+                console.error('Error accessing camera:', err);
+                alert('ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้งานกล้องในเบราว์เซอร์');
+                stopQRScanner();
+            });
+        }
+
+        function stopQRScanner() {
+            if (qrStream) {
+                qrStream.getTracks().forEach(track => track.stop());
+                qrStream = null;
+            }
+            if (qrScanInterval) {
+                clearInterval(qrScanInterval);
+                qrScanInterval = null;
+            }
+
+            document.getElementById('cameraView').classList.add('hidden');
+            document.getElementById('scannerInitial').classList.remove('hidden');
+            document.getElementById('scannerButtons').classList.remove('hidden');
+        }
+
+        function detectQRCode() {
+            if (qrScanInterval) {
+                clearInterval(qrScanInterval);
+                qrScanInterval = null;
+            }
+
+            // Stop camera
+            if (qrStream) {
+                qrStream.getTracks().forEach(track => track.stop());
+                qrStream = null;
+            }
+
+            // Show success state
+            document.getElementById('cameraView').classList.add('hidden');
+            document.getElementById('scanSuccess').classList.remove('hidden');
+
+            // Simulate QR code detection - find a course that student is not enrolled in
+            const availableCourse = courses.find(c => !c.students.includes(currentUser.id));
+            if (availableCourse) {
+                document.getElementById('scannedCourseInfo').textContent = 
+                    `พบรายวิชา: ${availableCourse.code} - ${availableCourse.name}`;
+
+                setTimeout(() => {
+                    // Add student to course
+                    availableCourse.students.push(currentUser.id);
+                    
+                    // Add course to student
+                    if (!currentUser.courses) currentUser.courses = [];
+                    currentUser.courses.push(availableCourse.id);
+                    
+                    // Update localStorage
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    
+                    alert(`ลงทะเบียนเข้าร่วมรายวิชา ${availableCourse.code} - ${availableCourse.name} สำเร็จ!`);
+                    closeQRScanner();
+                    loadStudentCourses();
+                    loadStudentStats();
+                }, 2000);
+            } else {
+                document.getElementById('scannedCourseInfo').textContent = 'ไม่พบรายวิชาใหม่ที่สามารถลงทะเบียนได้';
+                setTimeout(() => {
+                    alert('คุณได้ลงทะเบียนในรายวิชาทั้งหมดแล้ว');
+                    closeQRScanner();
+                }, 2000);
+            }
+        }
+
+        function simulateQRRegister() {
+            startQRScanner();
+        }
+
+        function generateSampleQRCode(course) {
+            // Create a sample QR code that can be displayed for testing
+            const qrData = `TCI-REGISTER:${course.id}:${course.code}:${course.name}`;
+            console.log(`Sample QR Code for ${course.code}: ${qrData}`);
+            
+            // You can display this QR code for testing purposes
+            // For now, we'll just log it to console
+        }
+
+        function showProfile() {
+            document.getElementById('profileModal').classList.remove('hidden');
+            showEditProfile();
+        }
+
+        function showAllAttendanceHistory() {
+            document.getElementById('allAttendanceModal').classList.remove('hidden');
+            loadAllAttendanceHistory();
+        }
+
+        function closeAllAttendanceHistory() {
+            document.getElementById('allAttendanceModal').classList.add('hidden');
+        }
+
+        function showDetailedAnalytics() {
+            document.getElementById('detailedAnalyticsModal').classList.remove('hidden');
+            loadDetailedAnalytics();
+        }
+
+        function closeDetailedAnalytics() {
+            document.getElementById('detailedAnalyticsModal').classList.add('hidden');
+        }
+
+        function closeProfile() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+
+        function showEditProfile() {
+            const content = document.getElementById('profileContent');
+            content.innerHTML = `
+                <div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-6">แก้ไขข้อมูลส่วนตัว</h4>
+                    <form id="editProfileForm" class="space-y-6">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">รหัสนักศึกษา</label>
+                                <input type="text" value="${currentUser.id}" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">คำนำหน้า</label>
+                                <select id="editPrefix" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                                    <option value="นาย" ${currentUser.prefix === 'นาย' ? 'selected' : ''}>นาย</option>
+                                    <option value="นางสาว" ${currentUser.prefix === 'นางสาว' ? 'selected' : ''}>นางสาว</option>
+                                    <option value="นาง" ${currentUser.prefix === 'นาง' ? 'selected' : ''}>นาง</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">ชื่อ</label>
+                                <input type="text" id="editFirstName" value="${currentUser.firstName}" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">นามสกุล</label>
+                                <input type="text" id="editLastName" value="${currentUser.lastName}" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">สาขา</label>
+                            <input type="text" value="สาขาวิชาเทคโนโลยีและนวัตกรรมคอมพิวเตอร์" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">เบอร์โทรศัพท์</label>
+                                <input type="tel" id="editPhone" value="${currentUser.phone}" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">อีเมล</label>
+                                <input type="email" id="editEmail" value="${currentUser.email}" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                            💾 บันทึกการเปลี่ยนแปลง
+                        </button>
+                    </form>
+                </div>
+            `;
+
+            document.getElementById('editProfileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Update user data
+                currentUser.prefix = document.getElementById('editPrefix').value;
+                currentUser.firstName = document.getElementById('editFirstName').value;
+                currentUser.lastName = document.getElementById('editLastName').value;
+                currentUser.phone = document.getElementById('editPhone').value;
+                currentUser.email = document.getElementById('editEmail').value;
+                
+                // Update in users array
+                const userIndex = users.findIndex(u => u.id === currentUser.id);
+                if (userIndex !== -1) {
+                    users[userIndex] = currentUser;
+                }
+                
+                // Update localStorage
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                // Update display
+                document.getElementById('userName').textContent = `${currentUser.prefix}${currentUser.firstName} ${currentUser.lastName}`;
+                
+                alert('บันทึกข้อมูลเรียบร้อยแล้ว!');
+            });
+        }
+
+        function loadAllAttendanceHistory() {
+            const content = document.getElementById('allAttendanceContent');
+            const studentCourses = courses.filter(course => course.students.includes(currentUser.id));
+            
+            content.innerHTML = `
+                <div class="mb-8">
+                    <div class="grid md:grid-cols-4 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600">${studentCourses.length}</div>
+                            <p class="text-blue-800 text-sm">รายวิชาที่เรียน</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600">
+                                ${studentCourses.reduce((total, course) => total + course.attendance.filter(a => a.studentId === currentUser.id).length, 0)}
+                            </div>
+                            <p class="text-green-800 text-sm">ครั้งที่เข้าเรียนรวม</p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-yellow-600">
+                                ${Math.round(studentCourses.reduce((total, course) => {
+                                    const attended = course.attendance.filter(a => a.studentId === currentUser.id).length;
+                                    return total + (attended / 16) * 100;
+                                }, 0) / studentCourses.length) || 0}%
+                            </div>
+                            <p class="text-yellow-800 text-sm">เฉลี่ยการเข้าเรียน</p>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-red-600">
+                                ${studentCourses.filter(course => {
+                                    const percentage = Math.round((course.attendance.filter(a => a.studentId === currentUser.id).length / 16) * 100);
+                                    return percentage < 80;
+                                }).length}
+                            </div>
+                            <p class="text-red-800 text-sm">วิชาเสี่ยงไม่ผ่าน</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    ${studentCourses.map(course => {
+                        const attendanceRecords = course.attendance.filter(a => a.studentId === currentUser.id);
+                        const percentage = Math.round((attendanceRecords.length / 16) * 100);
+                        return `
+                            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                <div class="bg-gray-50 p-6 border-b border-gray-200">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <h5 class="text-xl font-bold text-gray-800">${course.code} - ${course.name}</h5>
+                                            <p class="text-gray-600 mt-1">📅 ${course.day} ${course.time} | 🏫 ${course.classroom}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-2xl font-bold ${percentage >= 80 ? 'text-green-600' : 'text-red-600'}">${percentage}%</div>
+                                            <p class="text-sm text-gray-600">${attendanceRecords.length}/16 ครั้ง</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-6">
+                                    ${attendanceRecords.length > 0 ? `
+                                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            ${attendanceRecords.map((record, index) => `
+                                                <div class="bg-green-50 p-3 rounded-lg">
+                                                    <div class="flex justify-between items-center">
+                                                        <span class="text-sm font-medium text-green-800">ครั้งที่ ${index + 1}</span>
+                                                        <span class="text-green-600">✅</span>
+                                                    </div>
+                                                    <p class="text-xs text-green-600 mt-1">${new Date(record.timestamp).toLocaleDateString('th-TH')}</p>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : `
+                                        <div class="text-center py-8">
+                                            <div class="text-4xl mb-2">📚</div>
+                                            <p class="text-gray-500">ยังไม่มีการเข้าเรียนในรายวิชานี้</p>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function loadDetailedAnalytics() {
+            const content = document.getElementById('detailedAnalyticsContent');
+            const studentCourses = courses.filter(course => course.students.includes(currentUser.id));
+            
+            // Calculate analytics data
+            const totalAttendance = studentCourses.reduce((total, course) => total + course.attendance.filter(a => a.studentId === currentUser.id).length, 0);
+            const averagePercentage = Math.round(studentCourses.reduce((total, course) => {
+                const attended = course.attendance.filter(a => a.studentId === currentUser.id).length;
+                return total + (attended / 16) * 100;
+            }, 0) / studentCourses.length) || 0;
+            const riskyCourses = studentCourses.filter(course => {
+                const percentage = Math.round((course.attendance.filter(a => a.studentId === currentUser.id).length / 16) * 100);
+                return percentage < 80;
+            });
+            
+            content.innerHTML = `
+                <div class="space-y-8">
+                    <!-- Overview Cards -->
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-600 text-sm font-medium">รายวิชาทั้งหมด</p>
+                                    <p class="text-3xl font-bold text-blue-800">${studentCourses.length}</p>
+                                </div>
+                                <div class="text-blue-500 text-3xl">📚</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-green-600 text-sm font-medium">เข้าเรียนรวม</p>
+                                    <p class="text-3xl font-bold text-green-800">${totalAttendance}</p>
+                                </div>
+                                <div class="text-green-500 text-3xl">✅</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-yellow-600 text-sm font-medium">เฉลี่ยการเข้าเรียน</p>
+                                    <p class="text-3xl font-bold text-yellow-800">${averagePercentage}%</p>
+                                </div>
+                                <div class="text-yellow-500 text-3xl">📊</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-red-600 text-sm font-medium">วิชาเสี่ยง</p>
+                                    <p class="text-3xl font-bold text-red-800">${riskyCourses.length}</p>
+                                </div>
+                                <div class="text-red-500 text-3xl">⚠️</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Analysis -->
+                    <div class="bg-white rounded-xl p-6 border border-gray-200">
+                        <h5 class="text-xl font-bold text-gray-800 mb-6">📈 วิเคราะห์ผลการเข้าเรียน</h5>
+                        <div class="space-y-6">
+                            ${studentCourses.map(course => {
+                                const attendanceCount = course.attendance.filter(a => a.studentId === currentUser.id).length;
+                                const percentage = Math.round((attendanceCount / 16) * 100);
+                                const status = percentage >= 80 ? 'ปลอดภัย' : percentage >= 60 ? 'เสี่ยง' : 'อันตราย';
+                                const statusColor = percentage >= 80 ? 'green' : percentage >= 60 ? 'yellow' : 'red';
+                                
+                                return `
+                                    <div class="border border-gray-200 rounded-lg p-6">
+                                        <div class="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h6 class="text-lg font-bold text-gray-800">${course.code} - ${course.name}</h6>
+                                                <p class="text-gray-600 text-sm">${course.credits} หน่วยกิต | ${course.day} ${course.time}</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-2xl font-bold text-${statusColor}-600">${percentage}%</div>
+                                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-${statusColor}-100 text-${statusColor}-600">
+                                                    ${status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                                <span>ความคืบหน้า</span>
+                                                <span>${attendanceCount}/16 ครั้ง</span>
+                                            </div>
+                                            <div class="bg-gray-200 rounded-full h-3">
+                                                <div class="h-3 rounded-full bg-${statusColor}-500 transition-all duration-500" 
+                                                     style="width: ${percentage}%"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="grid md:grid-cols-3 gap-4 text-sm">
+                                            <div class="bg-gray-50 p-3 rounded-lg text-center">
+                                                <p class="text-gray-600">เข้าเรียน</p>
+                                                <p class="font-bold text-green-600">${attendanceCount} ครั้ง</p>
+                                            </div>
+                                            <div class="bg-gray-50 p-3 rounded-lg text-center">
+                                                <p class="text-gray-600">ขาดเรียน</p>
+                                                <p class="font-bold text-red-600">${16 - attendanceCount} ครั้ง</p>
+                                            </div>
+                                            <div class="bg-gray-50 p-3 rounded-lg text-center">
+                                                <p class="text-gray-600">คงเหลือ</p>
+                                                <p class="font-bold text-blue-600">${Math.max(0, Math.ceil(16 * 0.8) - attendanceCount)} ครั้ง</p>
+                                            </div>
+                                        </div>
+
+                                        ${percentage < 80 ? `
+                                            <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                                <p class="text-red-800 text-sm font-medium">⚠️ คำแนะนำ:</p>
+                                                <p class="text-red-700 text-sm mt-1">
+                                                    ${percentage < 60 ? 
+                                                        'ต้องเข้าเรียนทุกครั้งที่เหลือเพื่อให้ผ่านเกณฑ์ 80%' : 
+                                                        `ต้องเข้าเรียนอย่างน้อย ${Math.ceil(16 * 0.8) - attendanceCount} ครั้งจากที่เหลือ`
+                                                    }
+                                                </p>
+                                            </div>
+                                        ` : `
+                                            <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                <p class="text-green-800 text-sm font-medium">✅ สถานะ:</p>
+                                                <p class="text-green-700 text-sm mt-1">ผ่านเกณฑ์การเข้าเรียนแล้ว สามารถขาดได้อีก ${attendanceCount - Math.ceil(16 * 0.8)} ครั้ง</p>
+                                            </div>
+                                        `}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Risk Assessment -->
+                    ${riskyCourses.length > 0 ? `
+                        <div class="bg-red-50 border border-red-200 rounded-xl p-6">
+                            <h5 class="text-xl font-bold text-red-800 mb-4">⚠️ รายวิชาที่ต้องระวัง</h5>
+                            <div class="space-y-3">
+                                ${riskyCourses.map(course => {
+                                    const attendanceCount = course.attendance.filter(a => a.studentId === currentUser.id).length;
+                                    const percentage = Math.round((attendanceCount / 16) * 100);
+                                    const needed = Math.ceil(16 * 0.8) - attendanceCount;
+                                    
+                                    return `
+                                        <div class="bg-white p-4 rounded-lg border border-red-200">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h6 class="font-bold text-red-800">${course.code} - ${course.name}</h6>
+                                                    <p class="text-red-600 text-sm">ปัจจุบัน: ${percentage}% (${attendanceCount}/16 ครั้ง)</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-red-800 font-bold">ต้องเข้าเรียนอีก</p>
+                                                    <p class="text-2xl font-bold text-red-600">${Math.max(0, needed)} ครั้ง</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+                            <div class="text-6xl mb-4">🎉</div>
+                            <h5 class="text-xl font-bold text-green-800 mb-2">ยอดเยี่ยม!</h5>
+                            <p class="text-green-700">คุณผ่านเกณฑ์การเข้าเรียนในทุกรายวิชาแล้ว</p>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function showCourseHistory(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            const attendanceRecords = course.attendance.filter(a => a.studentId === currentUser.id);
+            
+            document.getElementById('courseHistoryModal').classList.remove('hidden');
+            document.getElementById('courseHistoryTitle').textContent = `ประวัติการเข้าเรียน - ${course.code}`;
+            
+            const content = document.getElementById('courseHistoryContent');
+            content.innerHTML = `
+                <div class="mb-6">
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4">${course.name}</h4>
+                        <div class="grid md:grid-cols-4 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">${course.credits}</div>
+                                <p class="text-blue-800 text-sm">หน่วยกิต</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600">${attendanceRecords.length}</div>
+                                <p class="text-green-800 text-sm">เข้าเรียนแล้ว</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-yellow-600">${16 - attendanceRecords.length}</div>
+                                <p class="text-yellow-800 text-sm">ขาดเรียน</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold ${Math.round((attendanceRecords.length / 16) * 100) >= 80 ? 'text-green-600' : 'text-red-600'}">
+                                    ${Math.round((attendanceRecords.length / 16) * 100)}%
+                                </div>
+                                <p class="text-gray-800 text-sm">เปอร์เซ็นต์</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg">
+                    <div class="p-6 border-b border-gray-200">
+                        <h5 class="text-lg font-bold text-gray-800">รายละเอียดการเข้าเรียน</h5>
+                    </div>
+                    <div class="p-6">
+                        ${attendanceRecords.length > 0 ? `
+                            <div class="space-y-3">
+                                ${attendanceRecords.map((record, index) => `
+                                    <div class="flex justify-between items-center p-4 bg-green-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium text-green-800">ครั้งที่ ${index + 1}</p>
+                                            <p class="text-green-600 text-sm">${new Date(record.timestamp).toLocaleString('th-TH')}</p>
+                                        </div>
+                                        <div class="text-green-600">
+                                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <div class="text-center py-8">
+                                <div class="text-6xl mb-4">📚</div>
+                                <p class="text-gray-500">ยังไม่มีการเข้าเรียนในรายวิชานี้</p>
+                                <p class="text-gray-400 text-sm mt-2">เริ่มเช็กชื่อเพื่อบันทึกการเข้าเรียน</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeCourseHistory() {
+            document.getElementById('courseHistoryModal').classList.add('hidden');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e4073766338954',t:'MTc2MDQxMjk0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
